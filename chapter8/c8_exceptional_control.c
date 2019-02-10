@@ -12,6 +12,7 @@ void exit(int status);
 #include<sys/types.h>
 #include<unistd.h>
 pid_t fork(void);
+子进程中返回0,父进程中返回子进程ID，错误返回-1
 
 //回收进程wait 和 waitpid
 #include<sys/types.h>
