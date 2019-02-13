@@ -1,19 +1,24 @@
+/***********************************************************************************************/
 //进程控制 getpid 返回调用进程的pid，getppid返回父进程的pid
 #include<sys/types.h>
 #include<unistd.h>
 pid_t getpid(void);
 pid_t getppid(void);
 
+/***********************************************************************************************/
 //中止进程的方式1 收到一个默认行为是中止进程的信号 2 从主程序返回，3 调用exit函数
 #include<stdlib.h>
 void exit(int status);
 
+/***********************************************************************************************/
 //创建进程
 #include<sys/types.h>
 #include<unistd.h>
 pid_t fork(void);
 子进程中返回0,父进程中返回子进程ID，错误返回-1
 
+
+/***********************************************************************************************/
 //回收进程wait 和 waitpid
 等待集合：pid=-1,等待集合是父进程的所有子进程
           pid>0,等待集合是pid一个单独的子进程
@@ -27,6 +32,7 @@ pid_t wait(int *statusp);
 返回：成功为子进程PID，返回0仅在option设置为WNOHANG时并且等待集合中没有子进程中止时
 如果调用进程没有子进程，则返回-1，并设置errno为ECHILD，如果waipid被一个信号中断则返回-1并设置errno为EINTR
 
+/***********************************************************************************************/
 //让进程休眠 sleep和pause
 #include<unistd.h>
 unsigned int sleep(unsigned int secs);
@@ -35,11 +41,12 @@ unsigned int sleep(unsigned int secs);
 int pause(void);
 让调用函数休眠直到收到一个信号
 
+/***********************************************************************************************/
 //加载并运行程序execve
 #include<unistd.h>
 int execve(const char*filename,const char *argv[],const char*envp[]);
 
-/*********************************************************************************************************/
+/************************************************************************************************/
 发送信号：Unix提供的所有的发送信号的机制都是基于进程组这个概念的，方法：通过更新某个进程的上下文中的某个状态来发送信号
 
 //每个进程只属于一个进程组，有一个进程组ID
@@ -81,7 +88,7 @@ unsigned int alarm(unsigned int secs);
 
 /********************************************************************************/
 
-//接受信号：信号被发送到上下文中，而上下文是从用户模式进入内核模式时保存在内核栈中的进程运行所需的的信息，因此接受信号只能发生在从内核栈中恢复进程的时刻：从内核模式切换会用户模式，包括从系统调用中返回或是完成了一次上下文切换
+//接收信号：信号被发送到上下文中，而上下文是从用户模式进入内核模式时保存在内核栈中的进程运行所需的的信息，因此接受信号只能发生在从内核栈中恢复进程的时刻：从内核模式切换会用户模式，包括从系统调用中返回或是完成了一次上下文切换
 
 pending位向量中维护者待处理信号的集合
 blocked位向量中维护者被阻塞的信号集合
@@ -103,8 +110,45 @@ handler为SIG_DFL,默认行为
 
 /**********************************************************************************************/
 
-阻塞和接触阻塞信号
+//阻塞和接触阻塞信号
+//将要阻塞的信号放入set，再将set放入blocked向量中实现信号的阻塞
+#include<signal.h>
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 
+how的值：
+SIG_BLOCK: 把set中的信号添加到blocked中
+SIG_UNBLOCK:从blocked中删除set中的信号
+SIG_SETMASK:blocked=set
+set的值由下面的函数设置，oldset中保存blocked中原来的值
+
+//设置集合set 
+int sigemptyset(sigset_t *set);           //清空set
+int sigfillset(sigset_t *set);            //将所有信号添加到set
+int sigaddset(sigset_t *set, int signum); //添加信号signum到set
+int sigdelset(sigset_t *set,int signum);  //删除信号signum到set
+
+int sigismember(const sigset_t *set, int signum);//查询信号signum是否在set中
+
+/***********************************************************************************************/
+
+#include<signal.h>
+int sigsuspend(const sigset_t *mask);
+暂时用mask替换当前阻塞集合，然后挂起该进程，直到遇到一个信号，直到遇到一个信号到达
+“ 阻塞信号—————{ sigsuspend暂时解除阻塞 挂起进程等待信号 }————阻塞信号————解除阻塞 ”
+
+/***********************************************************************************************/
+//非本地跳转
+setjmp在env缓冲区中保存到那个前的调用环境以供后面的longjmp使用，调用环境包括程序计数器栈指针和通用目的寄存器
+
+#include<setjmp.h>
+int setjmp(jmp_buf envp);
+int sigsetjmp(sigjmp_buf env, int savesigs);
+调用一次返回两次，第一次调用时返回0,后来对longjmp的调用导致其返回retval
+
+#include<setjmp.h>
+void longjmp(jmp_buf env,int retval);       
+void siglongjmp(sigjmp_buf env,int retval);       
+从不返回
 /***********************************************************************************************/
 // unix错误包装函数
 void unix_error(char *msg){
@@ -119,7 +163,7 @@ pid_t Fork(void){
 }
 
 
-
+/***********************************************************************************************/
 //fork,waitpid
 //实现按顺序回收
 pid_t pid[N],retpid;
@@ -127,7 +171,8 @@ int status;
 for(int i=0;i<N;i++)
    if((pid[i]=Fork()) == 0)
        exit(100+i);
-while((retpid = waitpid(pid[++],&status,0))>0){ //如果是0则回收顺序可能和创建的顺序不同，按顺序回收有利于更好的控制
+while((retpid = waitpid(pid[++],&status,0))>0){ 
+//如果是0则回收顺序可能和创建的顺序不同，按顺序回收有利于更好的控制
    if(WIFEXITED(status))
 	   printf("child %d exit status=%d\n",pid,WEXITSTATUS(status));
    else
@@ -137,6 +182,7 @@ if(errno != ECHILD)
 	unix_error("waitpid error");
 exit(0);
 
+/***********************************************************************************************/
 //signal信号处理程序
 void handler(int sig){
 	return;//什么也不做直接返回
@@ -157,5 +203,17 @@ int main(int argc,char**argv){
 	exit(0);
 }
 
+/***********************************************************************************************/
+//阻塞信号
+sigset_t mask,prev_mask;
+
+sigemptyset(&mask);
+sigaddset(&mask,SIGINT);
+
+sigprocmask(SIG_BLOCK,&mask,&prev_mask);
+/*.....代码......*/
+sigprocmask(SIG_SETMASK,&prev_mask,NULL)
+
+/***********************************************************************************************/
 
 
