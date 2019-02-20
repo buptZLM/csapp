@@ -200,4 +200,47 @@ int main(int argc,char **argv){
 }
 
 
+/**************************conclusion*********************************************************/
+struct in_addr{
+    uint32_t s_addr;//网络顺序
+}
+
+uint32_t htonl(uint32_t hostlong);//主机-网络.操作的是32位的整数，而不是点分十进制的字符串
+uint32_t ntohl(uint32_t netlong);  //网络-主机
+
+int inet_pton(AF_INET,const char *src,void *dst);
+const char *inet_ntop(AF_INET,const void *src,char *dst,socklen_t size);
+
+struct sockaddr_in {              //共16个字节
+     uint16_t sin_family;          /*16位，协议家族，总为AF_INET*/
+     uint16_t sin_port;            /*16位，端口号，网络顺序*/
+     struct in_addr; sin_addr;     /*32位，ip地址，网络顺序*/
+     unsigned char sin_zero[8];    /*8个字节，没什么用，只是为了保持和sockaddr一样长*/
+ }
+ 
+ 通用socket地址结构，只用于connect，bind和accept
+ struct sockaddr{         //共16字节
+     uinta6_t sa_family;  /*16位，协议家族*/
+     char sa_data[14];    /*14字节，ip地址和端口号*/
+ }
+
+int socket(int domain,int type,int protocol);
+int connect(int clientfd,const struct sockaddr *addr,socklen_t addrlen);
+int bind(int sockfd,const struct sockaddr *addr,socklen_t addrlen);
+int listen(int sockfd,int backlog);
+int accept(int listenfd,struct sockaddr *addr,int *addrlen);
+
+struct addrinfo {
+   int ai_flags;            /* customize behavior */
+   int ai_family;           /* socket函数的第一个参数 */
+   int ai_socktype;         /* socket函数的第二个参数 */
+   int ai_protocol;         /* socket函数的第三个参数 */
+   socklen_t ai_addrlen;    /* length in bytes of address */
+   struct sockaddr *ai_addr;/* 通用套接字地址 */
+   char *ai_canonname;      /* 主机名 */
+   struct addrinfo *ai_next;/* next in list */
+};
+
+int getaddrinfo( const char *hostname, const char *service, const struct addrinfo *hints, struct addrinfo **result );
+int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 
