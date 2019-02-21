@@ -148,16 +148,16 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
 /* $begin serve_static */
 void serve_static(int fd, char *filename, int filesize) 
 {
-    int srcfd;
+    int srcfd,j;
     char *srcp, filetype[MAXLINE], buf[MAXBUF];
  
     /* Send response headers to client */
     get_filetype(filename, filetype);       //line:netp:servestatic:getfiletype
-    sprintf(buf, "HTTP/1.0 200 OK\r\n");    //line:netp:servestatic:beginserve
-    sprintf(buf, "%sServer: Tiny Web Server\r\n", buf);
-    sprintf(buf, "%sConnection: close\r\n", buf);
-    sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
-    sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
+    j = sprintf(buf, "HTTP/1.0 200 OK\r\n");    //line:netp:servestatic:beginserve
+    j+=sprintf(buf+j, "%sServer: Tiny Web Server\r\n", buf);
+    j+=sprintf(buf+j, "%sConnection: close\r\n", buf);
+    j+=sprintf(buf+j, "%sContent-length: %d\r\n", buf, filesize);
+    j+=sprintf(buf+j, "%sContent-type: %s\r\n\r\n", buf, filetype);
     Rio_writen(fd, buf, strlen(buf));       //line:netp:servestatic:endserve
     printf("Response headers:\n");
     printf("%s", buf);
@@ -220,13 +220,13 @@ void clienterror(int fd, char *cause, char *errnum,
 		 char *shortmsg, char *longmsg) 
 {
     char buf[MAXLINE], body[MAXBUF];
-
+	int j;
     /* Build the HTTP response body */
-    sprintf(body, "<html><title>Tiny Error</title>");
-    sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
-    sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
-    sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
-    sprintf(body, "%s<hr><em>The Tiny Web server</em>\r\n", body);
+    j=sprintf(body, "<html><title>Tiny Error</title>");
+    j+=sprintf(body+j, "%s<body bgcolor=""ffffff"">\r\n", body);
+    j+=sprintf(body+j, "%s%s: %s\r\n", body, errnum, shortmsg);
+    j+=sprintf(body+j, "%s<p>%s: %s\r\n", body, longmsg, cause);
+    j+=sprintf(body+j, "%s<hr><em>The Tiny Web server</em>\r\n", body);
 
     /* Print the HTTP response */
     sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
